@@ -15,10 +15,17 @@ export default function Home() {
       style={styles.container}
     >
       <Text 
-        className="text-2xl font-bold text-white"
+        className="text-2xl font-bold text-white mb-4"
         style={styles.text}
       >
         <Link href="/camera" className='text-white'>Open Camera</Link>
+      </Text>
+      
+      <Text 
+        className="text-2xl font-bold text-white"
+        style={styles.text}
+      >
+        <Link href="/event" className='text-white'>Event Details</Link>
       </Text>
 
       <Ionicons name="add" size={30} color="white" />
