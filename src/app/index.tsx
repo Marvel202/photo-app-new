@@ -1,6 +1,9 @@
 import React from 'react';
 import { Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { AntDesign } from '@expo/vector-icons';
+import {Ionicons } from '@expo/vector-icons';
+import { Link } from 'expo-router';
 
 export default function Home() {
   return (
@@ -15,8 +18,10 @@ export default function Home() {
         className="text-2xl font-bold text-white"
         style={styles.text}
       >
-        Home
+        <Link href="/camera" className='text-white'>Open Camera</Link>
       </Text>
+
+      <Ionicons name="add" size={30} color="white" />
    </LinearGradient>
   );
 }
