@@ -1,4 +1,4 @@
-import { Text, TouchableOpacity, StyleSheet, View } from 'react-native';
+import { Text, TouchableOpacity, Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { Tables } from '../types/database.types';
@@ -20,13 +20,13 @@ export default function EventListItem({event}: EventListItemProps) {
             </View>
             
             <View style={styles.eventActions}>
-                <Link href="/camera" asChild>
+                <Link href={`/event/${event.id}/camera`} asChild>
                     <TouchableOpacity style={styles.actionButton} activeOpacity={0.8}>
                         <Ionicons name="camera" size={18} color="rgba(255, 255, 255, 0.9)" />
                         <Text style={styles.actionText}>Camera</Text>
                     </TouchableOpacity>
                 </Link>
-                <Link href="/event" asChild>
+                <Link href={`/event/${event.id}`} asChild>
                     <TouchableOpacity style={styles.actionButton} activeOpacity={0.8}>
                         <Ionicons name="eye" size={18} color="rgba(255, 255, 255, 0.9)" />
                         <Text style={styles.actionText}>View</Text>

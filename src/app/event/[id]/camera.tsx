@@ -3,11 +3,30 @@ import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { useRef, useState } from 'react';
 import { Button, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Pressable} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { uploadToCloudinary } from '../lib/cloudinary';
+import { uploadToCloudinary } from '../../../lib/cloudinary';
+import { insertAsset } from '../../../services/assets';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useLocalSearchParams } from 'expo-router';
+import { useAuth } from '../../../providers/AuthProvider';
 
 export default function CameraScreen() {
   const [facing, setFacing] = useState<CameraType>('back');
   const [permission, requestPermission] = useCameraPermissions();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+
+  const insertAssetMutation = useMutation({
+    mutationFn: (assetData: { event_id: string; user_id: string; asset_id: string }) => insertAsset(assetData),
+    onSuccess: (data) => {
+      console.log('Asset saved to database:', data);
+      queryClient.invalidateQueries({ queryKey: ['events', id] });
+    },
+    onError: (error) => {
+      console.error('Error saving asset to database:', error);
+    }
+  });
 
   const camera = useRef<CameraView>(null);
 
@@ -30,14 +49,46 @@ export default function CameraScreen() {
     setFacing(current => (current === 'back' ? 'front' : 'back'));
   }
   async function takePhoto() {
-    console.log('Take photo');
-    const photo = await camera.current?.takePictureAsync();
-    console.log('Photo taken:', photo?.uri);
-    if (!photo?.uri) return;
-    const cloudinaryResponse = await uploadToCloudinary(photo.uri);
-    console.log('Cloudinary response:', cloudinaryResponse);
-  }
+    try {
+      console.log('Taking photo...');
+      const photo = await camera.current?.takePictureAsync();
+      console.log('Photo taken:', photo?.uri);
+      
+      if (!photo?.uri) {
+        console.log('No photo URI available');
+        return;
+      }
 
+      console.log('Uploading to Cloudinary...');
+      const cloudinaryResponse = await uploadToCloudinary(photo.uri);
+      console.log('Cloudinary response:', cloudinaryResponse);
+
+      if (!cloudinaryResponse?.public_id) {
+        console.error('No public_id in Cloudinary response');
+        return;
+      }
+
+      if (!user?.id || !id) {
+        console.error('Missing user ID or event ID:', { userId: user?.id, eventId: id });
+        return;
+      }
+
+      console.log('Saving to database with:', {
+        event_id: id,
+        user_id: user.id,
+        asset_id: cloudinaryResponse.public_id,
+        userObject: user
+      });
+      
+      insertAssetMutation.mutate({
+        event_id: id,
+        user_id: user.id,
+        asset_id: cloudinaryResponse.public_id
+      });
+    } catch (error) {
+      console.error('Error in takePhoto:', error);
+    }
+  }  
   return (
     <View style={styles.container}>
       <CameraView ref={camera} style={styles.camera} facing={facing} />

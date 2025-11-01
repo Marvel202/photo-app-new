@@ -37,22 +37,45 @@ export default function RootLayout() {
                 <AuthProvider>
                  <Stack>
                      <Stack.Screen 
-                            name="index"
-                            options={{ title: 'Events', headerLargeTitle: true }} />
-                            <Stack.Screen 
-                            name="camera"
-                            options={{ 
-                                title: 'Camera', 
-                                headerBackButtonDisplayMode: 'minimal', 
-                                headerTransparent: true,
-                                headerBlurEffect: 'dark',
-                                headerRight: () => (
-                                    <Link href="/" className="mr-2 ml-2">
-                                        <Ionicons name="share-outline" size={24} color="white" />
-                                    </Link>
-                                )
-                            }} />
-                      </Stack>
+                        name="index"
+                        options={{ 
+                            title: 'Events', 
+                            headerLargeTitle: true 
+                        }} 
+                     />
+                     <Stack.Screen 
+                        name="event/[id]/index"
+                        options={{ 
+                            title: 'Event Details', 
+                            headerBackButtonDisplayMode: 'minimal', 
+                            headerTransparent: false,
+                            headerStyle: {
+                                backgroundColor: '#06b6d4',
+                            },
+                            headerTintColor: 'white',
+                            headerTitleStyle: {
+                                fontWeight: 'bold',
+                                color: 'white',
+                            },
+                        }} 
+                     />
+                     <Stack.Screen 
+                        name="event/[id]/camera"
+                        options={{ 
+                            title: 'Camera', 
+                            headerBackButtonDisplayMode: 'minimal', 
+                            headerTransparent: false,
+                            headerStyle: {
+                                backgroundColor: 'black',
+                            },
+                            headerTintColor: 'white',
+                            headerTitleStyle: {
+                                fontWeight: 'bold',
+                                color: 'white',
+                            },
+                        }} 
+                     />
+                 </Stack>
                  </AuthProvider>
             </QueryClientProvider>
         </ThemeProvider>
