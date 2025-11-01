@@ -1,11 +1,26 @@
-import React from 'react';
+import React, { use } from 'react';
 import { Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AntDesign } from '@expo/vector-icons';
 import {Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
+import { supabase } from '../lib/supabase';
+import { useEffect } from 'react';
 
 export default function Home() {
+  useEffect(() => {
+    // supabase.auth.getSession().then(({ data: { session } }) => {
+    //   console.log('Supabase session:', session);
+    // });
+    supabase.from('events').select('*').then(({ data, error }) => {
+      if (error) {
+        console.error('Error fetching events:', error);
+      } else {
+        console.log('Fetched events:', JSON.stringify(data, null, 2));
+      }
+    });
+  }, []);
+
   return (
     <LinearGradient
       colors={['#06b6d4', '#3b82f6']} // from-cyan-500 to-blue-500

@@ -1,0 +1,6 @@
+npx supabase gen types typescript --project-id ntllrthjqfawhpzbispu --schema public > src/types/database.types.ts
+
+npx supabase link --project-ref ntllrthjqfawhpzbispu // doesn't work "Missing required field in config: db.port" persists. go back to the above gen types method.
+
+
+
