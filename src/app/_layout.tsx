@@ -1,11 +1,29 @@
 import { Stack, Link } from 'expo-router';
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import AuthProvider from '../providers/AuthProvider';
 
 
 export default function RootLayout() {
+
+    useEffect(() => {
+        const signInIfNeeded = async () => {
+           const { data, error } = await supabase.auth.getSession();
+           if (error) {
+               console.error('Error getting session:', error);
+               return;
+           }
+           if (!data.session) {
+                await supabase.auth.signInAnonymously();
+           }
+        }
+    }, []);
+
     return (
         <ThemeProvider value={DarkTheme}>
+            <AuthProvider>
             <Stack>
                 <Stack.Screen 
                 name="index"
@@ -24,6 +42,7 @@ export default function RootLayout() {
                     )
                 }} />
             </Stack>
+            </AuthProvider>
         </ThemeProvider>
     );
 }
