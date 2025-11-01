@@ -1,70 +1,26 @@
-import React, { useEffect, useState } from 'react';
-import { Text, StyleSheet, View } from 'react-native';
+import React from 'react';
+import { Text, StyleSheet, View, ActivityIndicator, FlatList, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { AntDesign } from '@expo/vector-icons';
-import {Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { supabase } from '../lib/supabase';
-import { Session } from '@supabase/supabase-js';
 import { useAuth } from '../providers/AuthProvider';
+import { useQuery } from '@tanstack/react-query';
+import { getEvents } from '../services/events';
+import EventListItem from '../components/EventListItem';
+
 
 export default function Home() {
   const { isAuthenticated, user } = useAuth();
 
-  console.log('isAuthenticated:', isAuthenticated, user);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['events'],
+    queryFn: getEvents
+  });
 
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  console.log(isAuthenticated, user);
 
-  useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        // Check if there's an existing session
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log('Supabase session:', session);
-        setSession(session);
-        
-        // If no session, sign in anonymously
-        if (!session) {
-          console.log('No session found, signing in anonymously...');
-          const { data, error } = await supabase.auth.signInAnonymously();
-          if (error) {
-            console.error('Anonymous sign-in error:', error);
-          } else {
-            console.log('Anonymous sign-in success:', data.session);
-            setSession(data.session);
-          }
-        }
-      } catch (error) {
-        console.error('Auth initialization error:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initializeAuth();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Auth event:', event, 'Session:', session?.user?.id);
-        setSession(session);
-      }
-    );
-
-    // Fetch events
-    supabase.from('events').select('*').then(({ data, error }) => {
-      if (error) {
-        console.error('Error fetching events:', error);
-      } else {
-        console.log('Fetched events:', JSON.stringify(data, null, 2));
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <LinearGradient
         colors={['#06b6d4', '#3b82f6']}
@@ -72,64 +28,122 @@ export default function Home() {
         end={{ x: 1, y: 0 }}
         style={styles.container}
       >
+        <ActivityIndicator size="large" color="#ffffff" />
         <Text style={styles.text}>Loading...</Text>
+      </LinearGradient>
+    );
+  }
+
+  if (error) {
+    return (
+      <LinearGradient
+        colors={['#06b6d4', '#3b82f6']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.container}
+      >
+        <Text style={styles.text}>Error: {error.message}</Text>
       </LinearGradient>
     );
   }
 
   return (
     <LinearGradient
-      colors={['#06b6d4', '#3b82f6']} // from-cyan-500 to-blue-500
+      colors={['#06b6d4', '#3b82f6']}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 0 }}
-      className="flex-1 justify-center items-center"
       style={styles.container}
     >
       <View style={styles.authInfo}>
         <Text style={styles.authText}>
-          {session ? `Signed in as: ${session.user?.id}` : 'Not authenticated'}
+          {isAuthenticated ? `Signed in: ${user?.id}` : 'Not authenticated'}
         </Text>
       </View>
 
-      <Text 
-        className="text-2xl font-bold text-white mb-4"
-        style={styles.text}
-      >
-        <Link href="/camera" className='text-white'>Open Camera</Link>
-      </Text>
-      
-      <Text 
-        className="text-2xl font-bold text-white"
-        style={styles.text}
-      >
-        <Link href="/event" className='text-white'>Event Details</Link>
-      </Text>
+      <View style={styles.header}>
+        <Text style={styles.headerText}>Events ({data?.length || 0})</Text>
+        <TouchableOpacity style={styles.addButton}>
+          <Ionicons name="add" size={24} color="white" />
+        </TouchableOpacity>
+      </View>
 
-      <Ionicons name="add" size={30} color="white" />
-   </LinearGradient>
+      <FlatList
+        data={data || []}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <EventListItem event={item} />}
+        contentContainerStyle={styles.listContainer}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Ionicons name="calendar-outline" size={48} color="rgba(255,255,255,0.5)" />
+            <Text style={styles.emptyText}>No events yet</Text>
+            <Text style={styles.emptySubtext}>Create your first event!</Text>
+          </View>
+        }
+      />
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   text: {
     fontSize: 24,
     fontWeight: 'bold',
     color: 'white',
+    marginBottom: 16,
   },
   authInfo: {
     position: 'absolute',
     top: 60,
     left: 16,
     right: 16,
+    zIndex: 1,
   },
   authText: {
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.8)',
     textAlign: 'center',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 100,
+    marginBottom: 20,
+    paddingHorizontal: 20,
+  },
+  headerText: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  addButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 20,
+    padding: 8,
+  },
+  listContainer: {
+    flexGrow: 1,
+    paddingBottom: 20,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 100,
+  },
+  emptyText: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: 'white',
+    marginTop: 16,
+    marginBottom: 4,
+  },
+  emptySubtext: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.7)',
   },
 });
