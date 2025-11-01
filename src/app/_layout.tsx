@@ -75,7 +75,15 @@ export default function RootLayout() {
                             },
                         }} 
                      />
-                 </Stack>
+              
+                 <Stack.Screen 
+                        name="event/create"
+                        options={{ 
+                            title: 'Create Event', 
+                            presentation: 'modal',
+                        }} 
+                     />
+                        </Stack>
                  </AuthProvider>
             </QueryClientProvider>
         </ThemeProvider>

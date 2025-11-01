@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, StyleSheet, View, ActivityIndicator, FlatList, TouchableOpacity } from 'react-native';
+import { Text, StyleSheet, View, ActivityIndicator, FlatList, TouchableOpacity, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
@@ -80,6 +80,20 @@ export default function Home() {
             <Text style={styles.emptySubtext}>Create your first event!</Text>
           </View>
         }
+        ListHeaderComponent={() => (
+          <Link href="/event/create" asChild>
+            <Pressable style={styles.createEventBanner}>
+              <LinearGradient
+                colors={['#FF8C00', '#FFD700']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.createEventGradient}
+              >
+                <Text style={styles.createEventText}>+ Create Event</Text>
+              </LinearGradient>
+            </Pressable>
+          </Link>
+        )}
       />
     </LinearGradient>
   );
@@ -145,5 +159,20 @@ const styles = StyleSheet.create({
   emptySubtext: {
     fontSize: 16,
     color: 'rgba(255, 255, 255, 0.7)',
+  },
+  createEventBanner: {
+    marginVertical: 6,
+    marginHorizontal: 4,
+    overflow: 'hidden',
+  },
+  createEventGradient: {
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  createEventText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: 'white',
   },
 });
