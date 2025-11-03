@@ -1,3 +1,4 @@
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, StatusBar } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -23,6 +24,17 @@ export default function Join() {
     enabled: !!user?.id && !!id,
   });
 
+  // Auto-redirect already-members to event page (but not the owner)
+  useEffect(() => {
+    if (isMember && !membershipLoading && event && event.owner_id !== user?.id) {
+      // Show a brief welcome message for members (not owner) then redirect
+      Alert.alert("Welcome! 👋", `You're already part of ${event.name}!`);
+      setTimeout(() => {
+        router.replace(`/event/${id}`);
+      }, 1000);
+    }
+  }, [isMember, membershipLoading, event, id, user?.id]);
+
   const joinEventMutation = useMutation({
     mutationFn: () => {
       if (!user?.id) {
@@ -32,16 +44,16 @@ export default function Join() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({queryKey: ['events', id]});
+      queryClient.invalidateQueries({queryKey: ['events', user?.id]}); // Refresh user's events list
       queryClient.invalidateQueries({queryKey: ['membership', id, user?.id]});
-      Alert.alert("Success!", "You've successfully joined the event!", [
-        {
-          text: "OK",
-          onPress: () => {
-            // Dismiss the modal to go back to event photos page
-            router.dismiss();
-          }
-        }
-      ]);
+      
+      // Show success message for a few seconds without buttons
+      Alert.alert("Success! 🎉", "You've successfully joined the event!");
+      
+      // Auto-close the modal after short delay to return to event details
+      setTimeout(() => {
+        router.back();
+      }, 1500);
     },
     onError: (error) => {
       console.error('Error joining event:', error);
@@ -109,8 +121,17 @@ export default function Join() {
         <View style={styles.textContainer}>
           {isMember ? (
             <>
-              <Text style={styles.alreadyMemberText}>You're already a member of</Text>
-              <Text style={styles.eventName}>{event?.name}</Text>
+              {event?.owner_id === user?.id ? (
+                <>
+                  <Text style={styles.alreadyMemberText}>You are the owner of</Text>
+                  <Text style={styles.eventName}>{event?.name}</Text>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.alreadyMemberText}>You're already a member of</Text>
+                  <Text style={styles.eventName}>{event?.name}</Text>
+                </>
+              )}
             </>
           ) : (
             <>
@@ -122,24 +143,49 @@ export default function Join() {
         
         <Text style={styles.subtitle}>
           {isMember 
-            ? "You can view and share photos in this event"
+            ? (event?.owner_id === user?.id 
+                ? "You created this event and can manage all photos and members"
+                : "You can view and share photos in this event"
+              )
             : "Scan the QR code or use this link to join this photo sharing event"
           }
         </Text>
         
         {isMember ? (
-          <TouchableOpacity 
-            style={styles.joinButton}
-            onPress={() => {
-              // Dismiss the modal first, then navigate
-              router.dismiss();
-            }}
-          >
-            <View style={styles.alreadyMemberButton}>
-              <Ionicons name="checkmark-circle" size={24} color="#FFD700" />
-              <Text style={styles.alreadyMemberButtonText}>View Event</Text>
-            </View>
-          </TouchableOpacity>
+          <View style={styles.buttonContainer}>
+            {event?.owner_id === user?.id && (
+              <TouchableOpacity 
+                style={styles.shareButton}
+                onPress={() => {
+                  router.push(`/event/${id}/share`);
+                }}
+              >
+                <View style={styles.shareButtonContent}>
+                  <Ionicons name="qr-code" size={24} color="#06b6d4" />
+                  <Text style={styles.shareButtonText}>Share QR Code</Text>
+                </View>
+              </TouchableOpacity>
+            )}
+            
+            <TouchableOpacity 
+              style={styles.joinButton}
+              onPress={() => {
+                // Navigate to event details page
+                router.replace(`/event/${id}`);
+              }}
+            >
+              <View style={styles.alreadyMemberButton}>
+                <Ionicons 
+                  name={event?.owner_id === user?.id ? "star" : "checkmark-circle"} 
+                  size={24} 
+                  color="#FFD700" 
+                />
+                <Text style={styles.alreadyMemberButtonText}>
+                  {event?.owner_id === user?.id ? "Manage Event" : "View Event"}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
         ) : (
           <TouchableOpacity 
             style={[
@@ -294,6 +340,32 @@ const styles = StyleSheet.create({
     color: '#FFD700',
     fontSize: 20,
     fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  buttonContainer: {
+    width: '100%',
+    alignItems: 'center',
+    gap: 16,
+  },
+  shareButton: {
+    marginBottom: 8,
+    borderRadius: 0,
+    overflow: 'hidden',
+  },
+  shareButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderWidth: 1,
+    borderColor: 'rgba(6,182,212,0.3)',
+  },
+  shareButtonText: {
+    color: '#06b6d4',
+    fontSize: 16,
+    fontWeight: '600',
     marginLeft: 8,
   },
 });

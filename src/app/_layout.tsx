@@ -46,17 +46,8 @@ export default function RootLayout() {
                      <Stack.Screen 
                         name="event/[id]/index"
                         options={{ 
-                            title: 'Event Details', 
                             headerBackButtonDisplayMode: 'minimal', 
                             headerTransparent: false,
-                            headerStyle: {
-                                backgroundColor: '#06b6d4',
-                            },
-                            headerTintColor: 'white',
-                            headerTitleStyle: {
-                                fontWeight: 'bold',
-                                color: 'white',
-                            },
                         }} 
                      />
                      <Stack.Screen 
@@ -69,9 +60,11 @@ export default function RootLayout() {
                                 backgroundColor: 'black',
                             },
                             headerTintColor: 'white',
+                            headerBackTitle: '',
                             headerTitleStyle: {
                                 fontWeight: 'bold',
                                 color: 'white',
+                                fontSize: 18,
                             },
                         }} 
                      />

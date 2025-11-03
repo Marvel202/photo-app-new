@@ -21,8 +21,8 @@ export default function CreateEvent() {
         },
         onSuccess: (data) => {
             console.log('Event created successfully:', data);
-            // Invalidate events query to refresh the list
-            queryClient.invalidateQueries({ queryKey: ['events'] });
+            // Invalidate user events query to refresh the list
+            queryClient.invalidateQueries({ queryKey: ['events', user?.id] });
             
             Alert.alert(
                 "Event Created", 

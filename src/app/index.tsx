@@ -6,7 +6,7 @@ import { Link } from 'expo-router';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../providers/AuthProvider';
 import { useQuery } from '@tanstack/react-query';
-import { getEvents } from '../services/events';
+import { getEvents, getUserEvents } from '../services/events';
 import EventListItem from '../components/EventListItem';
 
 
@@ -14,11 +14,31 @@ export default function Home() {
   const { isAuthenticated, user } = useAuth();
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['events'],
-    queryFn: getEvents
+    queryKey: ['events', user?.id],
+    queryFn: () => {
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+      return getUserEvents(user.id);
+    },
+    enabled: !!user?.id
   });
 
   console.log(isAuthenticated, user);
+
+  if (!isAuthenticated || !user) {
+    return (
+      <LinearGradient
+        colors={['#06b6d4', '#3b82f6']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.container}
+      >
+        <ActivityIndicator size="large" color="#ffffff" />
+        <Text style={styles.text}>Authenticating...</Text>
+      </LinearGradient>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -29,7 +49,7 @@ export default function Home() {
         style={styles.container}
       >
         <ActivityIndicator size="large" color="#ffffff" />
-        <Text style={styles.text}>Loading...</Text>
+        <Text style={styles.text}>Loading your events...</Text>
       </LinearGradient>
     );
   }
@@ -76,8 +96,8 @@ export default function Home() {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Ionicons name="calendar-outline" size={48} color="rgba(255,255,255,0.5)" />
-            <Text style={styles.emptyText}>No events yet</Text>
-            <Text style={styles.emptySubtext}>Create your first event!</Text>
+            <Text style={styles.emptyText}>No events to show</Text>
+            <Text style={styles.emptySubtext}>Create an event or join others using a QR code!</Text>
           </View>
         }
         ListHeaderComponent={() => (

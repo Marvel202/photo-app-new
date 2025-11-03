@@ -5,31 +5,91 @@ import { thumbnail } from "@cloudinary/url-gen/actions/resize";
 import { artisticFilter } from '@cloudinary/url-gen/actions/effect';
 import { Link, useLocalSearchParams, router } from 'expo-router'; 
 import { useQuery } from '@tanstack/react-query';
-import { getEventById } from '../../../services/events';
+import { getEventById, checkUserEventAccess } from '../../../services/events';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack } from 'expo-router';
 import AssetItem from '../../../components/AssetItem';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../../../providers/AuthProvider';
 
 export default function EventDetails() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { user } = useAuth();
 
   const { data: event, 
     isLoading, 
-    error,
-  isRefetching,
-  refetch} = useQuery({
+    error } = useQuery({
     queryKey: ['events', id],
     queryFn: () => getEventById(id!),
   });
-  if (isLoading) {
-    return <ActivityIndicator size="large" color="#ffffff" style={styles.container} />;
+
+  const { data: hasAccess, isLoading: accessLoading } = useQuery({
+    queryKey: ['event-access', id, user?.id],
+    queryFn: () => checkUserEventAccess(id!, user?.id!),
+    enabled: !!user?.id && !!id,
+  });
+  if (isLoading || accessLoading) {
+    return (
+      <LinearGradient
+        colors={['#06b6d4', '#3b82f6']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.container}
+      >
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#ffffff" />
+          <Text style={styles.loadingText}>Loading event...</Text>
+        </View>
+      </LinearGradient>
+    );
   }
-  if (error ) {
-    return <Text style={styles.title}>Error: {error.message}</Text>;    
+
+  if (error) {
+    return (
+      <LinearGradient
+        colors={['#06b6d4', '#3b82f6']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.container}
+      >
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Error: {error.message}</Text>
+        </View>
+      </LinearGradient>
+    );
   }
-  if(!event) {
-    return <Text style={styles.title}>Event not found</Text>;
+
+  if (!event) {
+    return (
+      <LinearGradient
+        colors={['#06b6d4', '#3b82f6']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.container}
+      >
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Event not found</Text>
+        </View>
+      </LinearGradient>
+    );
+  }
+
+  // Check if user has access to view this event
+  if (hasAccess === false) {
+    return (
+      <LinearGradient
+        colors={['#06b6d4', '#3b82f6']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.container}
+      >
+        <View style={styles.errorContainer}>
+          <Ionicons name="lock-closed" size={48} color="#FFA500" />
+          <Text style={styles.errorText}>Access Denied</Text>
+          <Text style={styles.errorSubtext}>You don't have permission to view this event</Text>
+        </View>
+      </LinearGradient>
+    );
   }
 
   console.log('Event data:', event);
@@ -52,10 +112,17 @@ export default function EventDetails() {
           },
           headerTitleStyle: {
             color: 'white',
+            fontSize: 18,
           },
           headerTintColor: 'white',
+          headerBackTitle: '',
+          headerLeft: undefined, // Let expo-router handle the back button
           headerRight: () => (
-            <Pressable onPress={() => router.push(`/event/${id}/join`)}>
+            <Pressable onPress={() => {
+              // Always navigate to join page for consistency
+              // The join page will handle different states (owner, member, non-member)
+              router.push(`/event/${id}/join`);
+            }}>
               <Ionicons name="share-outline" size={24} color='white' />
             </Pressable>
           )
@@ -83,8 +150,6 @@ export default function EventDetails() {
               <Text style={styles.emptySubtext}>Take some photos to see them here!</Text>
             </View>
           )}
-          refreshing={isRefetching}
-          onRefresh={refetch}
         />
       </View>
       <Link href={`/event/${id}/camera`} asChild>
@@ -167,5 +232,34 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+  },
+  loadingText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  errorContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+    padding: 20,
+  },
+  errorText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  errorSubtext: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 14,
+    textAlign: 'center',
   },
 });
