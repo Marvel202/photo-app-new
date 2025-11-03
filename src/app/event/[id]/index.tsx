@@ -3,7 +3,7 @@ import { AdvancedImage } from 'cloudinary-react-native';
 import { cloudinary } from '../../../lib/cloudinary';
 import { thumbnail } from "@cloudinary/url-gen/actions/resize";
 import { artisticFilter } from '@cloudinary/url-gen/actions/effect';
-import { Link, useLocalSearchParams } from 'expo-router'; 
+import { Link, useLocalSearchParams, router } from 'expo-router'; 
 import { useQuery } from '@tanstack/react-query';
 import { getEventById } from '../../../services/events';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -44,8 +44,23 @@ export default function EventDetails() {
       style={styles.container}
     >
       <View style={styles.contentContainer}>
-        <Stack.Screen options={{ title: `Event: ${event.name}` }} />    
-       
+        <Stack.Screen 
+        options={{ 
+          title: event.name,
+          headerStyle: {
+            backgroundColor: 'black',
+          },
+          headerTitleStyle: {
+            color: 'white',
+          },
+          headerTintColor: 'white',
+          headerRight: () => (
+            <Pressable onPress={() => router.push(`/event/${id}/join`)}>
+              <Ionicons name="share-outline" size={24} color='white' />
+            </Pressable>
+          )
+        }}
+        />
         <FlatList
           data={event.assets || []}
           renderItem={({ item, index }) => {

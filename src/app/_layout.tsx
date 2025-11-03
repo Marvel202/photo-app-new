@@ -83,7 +83,21 @@ export default function RootLayout() {
                             presentation: 'modal',
                         }} 
                      />
-                        </Stack>
+                     <Stack.Screen 
+                        name="event/[id]/share"
+                        options={{ 
+                            title: 'Share', 
+                            presentation: 'modal',
+                        }} 
+                     />
+                        <Stack.Screen 
+                        name="event/[id]/join"
+                        options={{ 
+                            title: 'Join Event', 
+                            presentation: 'modal',
+                        }} 
+                     />
+                    </Stack>
                  </AuthProvider>
             </QueryClientProvider>
         </ThemeProvider>

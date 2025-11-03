@@ -53,3 +53,46 @@ export async function createEvent(newEvent: TablesInsert<"events">) {
         throw error;
     }
 }
+
+export async function checkEventMembership(eventId: string, userId: string) {
+    console.log('checkEventMembership called with:', { eventId, userId });
+    
+    try {
+        const { data, error } = await supabase
+            .from('event_memberships')
+            .select('*')
+            .eq('event_id', eventId)
+            .eq('user_id', userId)
+            .single();
+        
+        // If we get data, user is a member. If error with PGRST116 (no rows), user is not a member
+        if (error && error.code !== 'PGRST116') {
+            console.error('Error checking membership:', error);
+            throw error;
+        }
+        
+        const isMember = !!data;
+        console.log('Membership check result:', { isMember, data });
+        return isMember;
+    } catch (error) {
+        console.error('Unexpected error in checkEventMembership:', error);
+        throw error;
+    }
+}
+
+export async function joinEvent(eventId: string, userId: string) {
+    console.log('joinEvent called with:', { eventId, userId });
+    
+    try {
+        const { data, error } = await supabase
+            .from('event_memberships')
+            .insert({ event_id: eventId, user_id: userId })
+            .select()
+            .single()
+            .throwOnError();
+        return data;
+    } catch (error) {
+        console.error('Unexpected error in joinEvent:', error);
+        throw error;
+    }
+}
