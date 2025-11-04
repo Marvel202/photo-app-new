@@ -1,4 +1,4 @@
-import { Text, View, StyleSheet, ActivityIndicator } from 'react-native';
+import { Text, View, StyleSheet, ActivityIndicator, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import QRCode from 'react-native-qrcode-svg';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -6,16 +6,32 @@ import { useQuery } from '@tanstack/react-query';
 import { getEventById } from '@/services/events';
 import { useAuth } from '@/providers/AuthProvider';
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import Constants from 'expo-constants';
+import * as Linking from 'expo-linking';
 
 export default function Share() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
+  const [qrUrl, setQrUrl] = useState<string>('');
   
   const { data: event, isLoading, error } = useQuery({
     queryKey: ['events', id],
     queryFn: () => getEventById(id!),
   });
+
+  // Generate the proper URL for the QR code
+  useEffect(() => {
+    const generateUrl = async () => {
+      // For Expo Go, use the expo linking URL
+      // This will work correctly with the development server
+      const url = Linking.createURL(`event/${id}/join`);
+      console.log('Generated QR URL:', url);
+      setQrUrl(url);
+    };
+    
+    generateUrl();
+  }, [id]);
 
   // Access control is now handled by proper navigation flow
   // The join page will only navigate here for owners
@@ -84,12 +100,16 @@ export default function Share() {
        </View>
        <Text style={styles.title}>Share "{event?.name}" with friends</Text>
        <View style={styles.qrContainer}>
-         <QRCode
-           value={`exp://192.168.1.12:8081/--/event/${id}/join`}
-           size={200}
-           backgroundColor="white"
-           color="black"
-         />
+         {qrUrl ? (
+           <QRCode
+             value={qrUrl}
+             size={200}
+             backgroundColor="white"
+             color="black"
+           />
+         ) : (
+           <ActivityIndicator size="large" color="#06b6d4" />
+         )}
        </View>
 
        <Text style={styles.instructions}>

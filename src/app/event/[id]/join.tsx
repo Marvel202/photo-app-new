@@ -24,17 +24,6 @@ export default function Join() {
     enabled: !!user?.id && !!id,
   });
 
-  // Auto-redirect already-members to event page (but not the owner)
-  useEffect(() => {
-    if (isMember && !membershipLoading && event && event.owner_id !== user?.id) {
-      // Show a brief welcome message for members (not owner) then redirect
-      Alert.alert("Welcome! 👋", `You're already part of ${event.name}!`);
-      setTimeout(() => {
-        router.replace(`/event/${id}`);
-      }, 1000);
-    }
-  }, [isMember, membershipLoading, event, id, user?.id]);
-
   const joinEventMutation = useMutation({
     mutationFn: () => {
       if (!user?.id) {
@@ -50,9 +39,9 @@ export default function Join() {
       // Show success message for a few seconds without buttons
       Alert.alert("Success! 🎉", "You've successfully joined the event!");
       
-      // Auto-close the modal after short delay to return to event details
+      // Navigate to event page after short delay
       setTimeout(() => {
-        router.back();
+        router.replace(`/event/${id}`);
       }, 1500);
     },
     onError: (error) => {
